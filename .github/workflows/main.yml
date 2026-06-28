@@ -68,10 +68,14 @@ jobs:
     - name: Push to GitHub Packages
       if: matrix.os == 'windows-latest'
       run: |
-        dotnet nuget push dist/Release/Packages/*.nupkg `
-          --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json `
-          --api-key ${{ secrets.GITHUB_TOKEN }} `
-          --skip-duplicate
+        $pkgs = Get-ChildItem -Path dist/Release/Packages -Recurse -Filter *.nupkg
+        if (-not $pkgs) { throw 'No .nupkg files found' }
+        $pkgs | ForEach-Object {
+          dotnet nuget push $_.FullName `
+            --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json `
+            --api-key ${{ secrets.GITHUB_TOKEN }} `
+            --skip-duplicate
+        }
       shell: pwsh
 
   test:
