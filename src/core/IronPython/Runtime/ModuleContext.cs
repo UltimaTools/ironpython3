@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Threading;
 using Microsoft.Scripting.Runtime;
 using Microsoft.Scripting.Utils;
 
@@ -18,6 +19,7 @@ namespace IronPython.Runtime {
         private readonly PythonModule _module;
         private ExtensionMethodSet _extensionMethods = ExtensionMethodSet.Empty;
         private ModuleOptions _features;
+        private CancellationToken _cancellationToken;
 
         /// <summary>
         /// Creates a new ModuleContext which is backed by the specified dictionary.
@@ -132,6 +134,29 @@ namespace IronPython.Runtime {
             }
             set {
                 _extensionMethods = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the <see cref="CancellationToken"/> that flows through all
+        /// code executing against this module context. When the compiler has emitted
+        /// cancellation checks (see <see cref="Compiler.PythonCompilerOptions.InjectCancellationChecks"/>),
+        /// generated code probes this token at loop back-edges and line boundaries and
+        /// raises <see cref="OperationCanceledException"/> if cancellation has been
+        /// requested.
+        /// </summary>
+        /// <remarks>
+        /// Because every nested <see cref="CodeContext"/> (function, class, module)
+        /// shares the same <see cref="ModuleContext"/> instance, setting this once at
+        /// the start of a run propagates the token automatically to all nested code
+        /// without any further plumbing.
+        /// </remarks>
+        public CancellationToken CancellationToken {
+            get {
+                return _cancellationToken;
+            }
+            set {
+                _cancellationToken = value;
             }
         }
 

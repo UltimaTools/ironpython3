@@ -66,6 +66,7 @@ namespace IronPython.Compiler.Ast {
         public static readonly MethodInfo RemoveName = GetMethod((Action<CodeContext, string>)PythonOps.RemoveName);
         public static readonly MethodInfo SetName = GetMethod((Func<CodeContext, string, object, object>)PythonOps.SetName);
         public static readonly MethodInfo KeepAlive = GetMethod((Action<object>)GC.KeepAlive);
+        public static readonly MethodInfo CancellationCheck = GetMethod((Action<CodeContext>)Runtime.CancellationCheck.Check);
         public static readonly MethodInfo MakeEmptyDict = GetMethod((Func<PythonDictionary>)PythonOps.MakeEmptyDict);
         public static readonly MethodInfo MakeDictFromItems = GetMethod((Func<object[], PythonDictionary>)PythonOps.MakeDictFromItems);
         public static readonly MethodInfo MakeConstantDict = GetMethod((Func<object, PythonDictionary>)PythonOps.MakeConstantDict);

@@ -46,6 +46,13 @@ namespace IronPython.Compiler.Ast {
                 } else {
                     if (statement.CanThrow && newline != -1) {
                         statements.Add(UpdateLineNumber(newline));
+
+                        // Emit a cancellation probe at each new source line so that
+                        // long sequential scripts (no loops) stay cancellable when
+                        // InjectCancellationChecks is enabled.
+                        if (GlobalParent.InjectCancellationChecks) {
+                            statements.Add(GlobalParent.CancellationCheck(Parent.LocalContext));
+                        }
                     }
 
                     statements.Add(statement);

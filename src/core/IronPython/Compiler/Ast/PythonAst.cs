@@ -328,6 +328,30 @@ namespace IronPython.Compiler.Ast {
             }
         }
 
+        /// <summary>
+        /// True when the compiler should inject cancellation probes at loop
+        /// back-edges and line boundaries. Mirrors
+        /// <see cref="Compiler.PythonCompilerOptions.InjectCancellationChecks"/>.
+        /// </summary>
+        internal bool InjectCancellationChecks {
+            get {
+                return _compilerContext != null
+                    && ((PythonCompilerOptions)_compilerContext.Options).InjectCancellationChecks;
+            }
+        }
+
+        /// <summary>
+        /// Builds a cancellation-probe expression targeting the supplied in-scope
+        /// <see cref="CodeContext"/>. Returns an empty expression when cancellation
+        /// injection is disabled, so call sites incur no overhead for existing callers.
+        /// </summary>
+        internal MSAst.Expression CancellationCheck(MSAst.Expression context) {
+            if (!InjectCancellationChecks) {
+                return AstUtils.Empty();
+            }
+            return Ast.Call(AstMethods.CancellationCheck, context);
+        }
+
         public Statement Body {
             get { return _body; }
         }

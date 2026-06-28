@@ -12,7 +12,7 @@ namespace IronPython.Compiler {
     [Serializable]
     public sealed class PythonCompilerOptions : CompilerOptions {
         private ModuleOptions _module;
-        private bool _skipFirstLine, _dontImplyIndent;
+        private bool _skipFirstLine, _dontImplyIndent, _injectCancellationChecks;
         private string _moduleName;
         private int[] _initialIndentation;
         private CompilationMode _compilationMode;
@@ -116,6 +116,24 @@ namespace IronPython.Compiler {
         public bool SkipFirstLine {
             get { return _skipFirstLine; }
             set { _skipFirstLine = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets whether the compiler injects cancellation probes at loop
+        /// back-edges and line boundaries. When enabled, generated code reads the
+        /// <see cref="System.Threading.CancellationToken"/> stored on the executing
+        /// <see cref="CodeContext"/> (via <see cref="Runtime.ModuleContext"/>) and
+        /// throws <see cref="System.OperationCanceledException"/> if the
+        /// token has been cancelled.
+        /// </summary>
+        /// <remarks>
+        /// Defaults to <c>false</c> so that existing callers incur zero overhead.
+        /// The cancellation token itself is supplied at execution time on the
+        /// <see cref="Runtime.ModuleContext"/>.
+        /// </remarks>
+        public bool InjectCancellationChecks {
+            get { return _injectCancellationChecks; }
+            set { _injectCancellationChecks = value; }
         }
 
         internal CompilationMode CompilationMode {

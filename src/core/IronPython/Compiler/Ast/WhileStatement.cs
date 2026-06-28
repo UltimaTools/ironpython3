@@ -85,7 +85,7 @@ namespace IronPython.Compiler.Ast {
                 MSAst.Expression test = MSAst.Expression.Constant(true);
                 MSAst.Expression res = AstUtils.While(
                     test,
-                    Body,
+                    AddCancellationCheck(Body),
                     ElseStatement,
                     _break,
                     _continue
@@ -105,10 +105,25 @@ namespace IronPython.Compiler.Ast {
                         GlobalParent.Convert(typeof(bool), Microsoft.Scripting.Actions.ConversionResultKind.ExplicitCast, Test),
                     Header
                 ),
-                Body,
+                AddCancellationCheck(Body),
                 ElseStatement,
                 _break,
                 _continue
+            );
+        }
+
+        /// <summary>
+        /// Wraps the loop body so that a cancellation probe runs at the top of
+        /// every iteration (i.e. at the back-edge of the loop). The probe is only
+        /// emitted when <see cref="PythonAst.InjectCancellationChecks"/> is enabled.
+        /// </summary>
+        private MSAst.Expression AddCancellationCheck(MSAst.Expression body) {
+            if (!GlobalParent.InjectCancellationChecks) {
+                return body;
+            }
+            return MSAst.Expression.Block(
+                GlobalParent.CancellationCheck(Parent.LocalContext),
+                body
             );
         }
 

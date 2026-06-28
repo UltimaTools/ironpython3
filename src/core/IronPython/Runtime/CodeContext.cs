@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Threading;
 
 using Microsoft.Scripting.Runtime;
 using Microsoft.Scripting.Utils;
@@ -46,6 +47,13 @@ namespace IronPython.Runtime {
         /// Gets the PythonContext which created the CodeContext.
         /// </summary>
         public PythonContext LanguageContext => ModuleContext.Context;
+
+        /// <summary>
+        /// Convenience passthrough for the cancellation token stored on
+        /// <see cref="ModuleContext"/>. Generated code probes this token at loop
+        /// back-edges and line boundaries when cancellation injection is enabled.
+        /// </summary>
+        public CancellationToken CancellationToken => ModuleContext.CancellationToken;
 
         #endregion
 

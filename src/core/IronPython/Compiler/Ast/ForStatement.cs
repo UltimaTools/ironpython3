@@ -79,19 +79,7 @@ namespace IronPython.Compiler.Ast {
             //    body
             // else:
             //    else
-            MSAst.Expression ls = AstUtils.Loop(
-                    parent.GlobalParent.AddDebugInfo(
-                        Ast.Call(
-                            Ast.Property(
-                                enumerator,
-                                typeof(KeyValuePair<IEnumerator, IDisposable>).GetProperty("Key")
-                            ),
-                            typeof(IEnumerator).GetMethod("MoveNext")
-                        ),
-                        left.Span
-                    ),
-                    null,
-                    Ast.Block(
+            MSAst.Expression loopBody = Ast.Block(
                         left.TransformSet(
                             SourceSpan.None,
                             Ast.Call(
@@ -106,7 +94,31 @@ namespace IronPython.Compiler.Ast {
                         body,
                         isStatement ? UpdateLineNumber(parent.GlobalParent.IndexToLocation(list.StartIndex).Line) : AstUtils.Empty(),
                         AstUtils.Empty()
+                    );
+
+            // Emit a cancellation probe at the top of each iteration so infinite
+            // for-loops (and infinite comprehensions) are cancellable when
+            // InjectCancellationChecks is enabled.
+            if (parent.GlobalParent.InjectCancellationChecks) {
+                loopBody = Ast.Block(
+                    parent.GlobalParent.CancellationCheck(parent.LocalContext),
+                    loopBody
+                );
+            }
+
+            MSAst.Expression ls = AstUtils.Loop(
+                    parent.GlobalParent.AddDebugInfo(
+                        Ast.Call(
+                            Ast.Property(
+                                enumerator,
+                                typeof(KeyValuePair<IEnumerator, IDisposable>).GetProperty("Key")
+                            ),
+                            typeof(IEnumerator).GetMethod("MoveNext")
+                        ),
+                        left.Span
                     ),
+                    null,
+                    loopBody,
                     else_,
                     breakLabel,
                     continueLabel

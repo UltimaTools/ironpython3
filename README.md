@@ -52,6 +52,42 @@ System.Console.WriteLine(greetings("world"));
 ```
 This example assumes that `IronPython` has been added to the C# project as a NuGet package.
 
+### CancellationToken support (`IronPython.Hosting.PythonScript`)
+
+IronPython exposes a Roslyn-mirroring scripting API with first-class
+`CancellationToken` support so you can safely execute untrusted or
+potentially-infinite scripts under a timeout:
+
+```cs
+using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+// One-shot evaluation
+int result = await PythonScript.EvaluateAsync<int>(
+    "X + Y",
+    globals: new { X = 1, Y = 2 },
+    cancellationToken: cts.Token);
+
+// Pre-compile for repeated execution
+var script = PythonScript.Create<double>("calculate(Value)");
+script.Compile(); // surfaces syntax errors immediately
+
+foreach (var item in items)
+{
+    var state = await script.RunAsync(
+        new { Value = item.Value },
+        cts.Token);
+    results.Add(state.ReturnValue);
+}
+
+// Multi-part stateful execution
+var state = await PythonScript.RunAsync("x = 1", cancellationToken: cts.Token);
+state = await state.ContinueWithAsync("x += 10", cts.Token);
+Console.WriteLine(state.Variables["x"].Value); // 11
+```
+
+Tight infinite loops are cancelled on every iteration via injected back-edge checks.
+Sequential scripts are cancelled at line boundaries.
+
 ## Code of Conduct
 
 This project has adopted the code of conduct defined by the Contributor Covenant to clarify expected behavior in our community.
