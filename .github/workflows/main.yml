@@ -12,6 +12,9 @@ concurrency:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    permissions:
+      packages: write
+      contents: read
 
     strategy:
       fail-fast: false
@@ -60,6 +63,16 @@ jobs:
       with:
         name: packages-${{ matrix.os }}
         path: dist/Release/Packages
+
+      # Push to GitHub Packages (only from Windows to avoid triplicate uploads)
+    - name: Push to GitHub Packages
+      if: matrix.os == 'windows-latest'
+      run: |
+        dotnet nuget push dist/Release/Packages/*.nupkg `
+          --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json `
+          --api-key ${{ secrets.GITHUB_TOKEN }} `
+          --skip-duplicate
+      shell: pwsh
 
   test:
     runs-on: ${{ matrix.os }}
