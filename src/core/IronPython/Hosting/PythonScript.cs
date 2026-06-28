@@ -10,6 +10,9 @@ using System.Threading.Tasks;
 
 using Microsoft.Scripting;
 using Microsoft.Scripting.Hosting;
+using Microsoft.Scripting.Hosting.Providers;
+
+using IronPython.Runtime;
 
 namespace IronPython.Hosting {
 
@@ -94,6 +97,33 @@ namespace IronPython.Hosting {
 
             var engine = PythonScriptRunner.CreateEngine(options);
             return new PythonScript<T>(engine, code, options ?? PythonScriptOptions.Default);
+        }
+
+        /// <summary>
+        /// Attaches a <see cref="CancellationToken"/> to the given
+        /// <see cref="ScriptScope"/> so that cancellation probes injected into
+        /// scripts executing against this scope can observe it. Call this before
+        /// <see cref="CompiledCode.Execute(ScriptScope)"/> (or equivalent) when
+        /// using the lower-level hosting API directly rather than
+        /// <see cref="RunAsync"/> or <see cref="EvaluateAsync{T}"/>.
+        /// </summary>
+        public static void SetCancellationToken(Microsoft.Scripting.Hosting.ScriptScope scope, CancellationToken token)
+        {
+            if (scope == null)
+                throw new ArgumentNullException(nameof(scope));
+
+            var engine = scope.Engine;
+            if (engine == null)
+                return;
+
+            var pyContext = HostingHelpers.GetLanguageContext(engine) as PythonContext;
+            if (pyContext == null)
+                return;
+
+            var rawScope = HostingHelpers.GetScope(scope);
+            var ext = pyContext.EnsureScopeExtension(rawScope) as PythonScopeExtension;
+            if (ext != null)
+                ext.ModuleContext.CancellationToken = token;
         }
     }
 }
