@@ -147,10 +147,14 @@ namespace IronPython.Hosting {
 
             try {
                 return await Task.Run(() => compiled.Execute(scope), cancellationToken).ConfigureAwait(false);
-            } catch (OperationCanceledException) {
-                throw; // clean cancellation, propagate as-is
+            } catch (OperationCanceledException ex) when (cancellationToken.IsCancellationRequested) {
+                // Normalize to the exact base type so callers can reliably catch
+                // OperationCanceledException regardless of whether the token rips
+                // before the delegate starts (TaskCanceledException) or inside the
+                // injected probe (OperationCanceledException).
+                throw new OperationCanceledException(ex.Message, ex, cancellationToken);
             } catch (AggregateException ag) when (ag.InnerException is OperationCanceledException) {
-                throw ag.InnerException;
+                throw new OperationCanceledException(ag.InnerException!.Message, ag.InnerException, cancellationToken);
             }
         }
     }
